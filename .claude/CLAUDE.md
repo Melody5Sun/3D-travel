@@ -7,7 +7,7 @@
 1. **先读 `.claude/TASKS.md`**，从优先级最高的待办开始做。每完成一项，就更新该文件（移到「已完成」，写明怎么验证的）。
 2. 运行 `npm ci`，再 `npm run dev`（端口 5173；Claude 预览用 `.claude/launch.json` 里的 `dev` 配置）。
 3. 在内置浏览器里验证：先 `resize_window` 到 1280×720，否则截图比例会错乱。浏览器控制台里可以直接用 `map` `state` `setMode` `enterCity` `playTour` `CITIES`。
-4. 提交前 `npm run build` 必须通过。提交信息末尾加一行 `Co-Authored-By`。
+4. 提交前 `npm run build` 必须通过。**提交信息里不要加 `Co-Authored-By`**，不要把 Claude 列为共同作者。
 
 ## 约定与坑
 
