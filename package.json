@@ -1,7 +1,9 @@
 {
   "name": "3d-travel",
   "version": "1.0.0",
-  "description": "3D 全景沉浸式城市旅游体验",
+  "private": true,
+  "description": "云游 · 3D 全景城市漫游：真实地理数据构建的 3D 城市、电影级航拍宣传片、景点介绍、360° 实景与旅游攻略",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,19 +13,12 @@
     "type": "git",
     "url": "git+https://github.com/Melody5Sun/3D-travel.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Melody5Sun/3D-travel/issues"
-  },
-  "homepage": "https://github.com/Melody5Sun/3D-travel#readme",
   "dependencies": {
     "maplibre-gl": "^6.11.2",
     "three": "^0.186.1"
   },
   "devDependencies": {
     "vite": "^8.3.1"
-  },
-  "type": "module"
+  }
 }
