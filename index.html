@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>云游 · 3D 全景城市漫游</title>
+  <meta name="description" content="3D 全景沉浸式城市旅游：电影级城市宣传片、景点介绍、360° 实景、旅游攻略与附近店铺。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='28' fill='%230b1220'/><circle cx='32' cy='24' r='7' fill='%23f2c36b'/><circle cx='32' cy='42' r='5' fill='%23e0457b'/><rect x='30.5' y='8' width='3' height='50' fill='%23f2c36b'/></svg>" />
+</head>
+<body>
+  <div id="map" aria-label="3D 城市地图"></div>
+
+  <div id="loader" class="loader"><div class="ring"></div><p>正在唤醒地球…</p></div>
+
+  <!-- 电影模式：遮幅、字幕、进度 -->
+  <div id="cinema" aria-live="polite">
+    <div class="bar top"></div>
+    <div class="bar bottom"></div>
+    <div id="title-card" class="title-card"><h1></h1><p></p></div>
+    <div id="caption" class="caption"><span class="idx"></span><h2></h2><p></p></div>
+    <div class="cinema-ctrl">
+      <div class="progress"><i id="cin-progress"></i></div>
+      <button id="skip" class="ghost">跳过宣传片 · 自由探索 ›</button>
+    </div>
+  </div>
+  <div id="fader"></div>
+
+  <header id="hud">
+    <div class="brand" role="img" aria-label="云游">云游<small>3D 全景城市漫游</small></div>
+    <button id="city-btn" class="chip" aria-haspopup="dialog"><span id="city-name">选择城市</span><b>▾</b></button>
+    <nav class="tools">
+      <button id="btn-tour" title="重播城市宣传片">▶ 宣传片</button>
+      <button id="btn-guide" title="城市旅游攻略">攻略</button>
+      <button id="btn-time" title="切换白天 / 黄昏 / 夜景">白天</button>
+      <button id="btn-4k" title="以 3840×2160 分辨率渲染">4K</button>
+    </nav>
+  </header>
+
+  <aside id="spots" aria-label="景点列表"></aside>
+  <div id="help">拖拽平移 · 右键拖拽旋转/俯仰 · 滚轮缩放 · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 飞行 · <kbd>Q</kbd><kbd>E</kbd> 转向</div>
+
+  <aside id="panel" class="drawer" hidden aria-live="polite"></aside>
+  <aside id="guide" class="drawer" hidden></aside>
+
+  <section id="picker" hidden role="dialog" aria-label="选择城市">
+    <div class="picker-inner">
+      <p class="eyebrow">CLOUD WANDER · 3D IMMERSIVE CITY TOUR</p>
+      <h1>云游世界，一键抵达</h1>
+      <p class="lead">真实地理数据构建的 3D 城市 · 电影级航拍宣传片 · 景点 360° 实景 · 实时攻略与附近店铺</p>
+      <div id="city-grid" class="city-grid"></div>
+      <p id="countdown" class="countdown"></p>
+    </div>
+  </section>
+
+  <section id="pano" hidden aria-label="360° 全景">
+    <canvas></canvas>
+    <div class="pano-top">
+      <div><h2 id="pano-title"></h2><p id="pano-credit"></p></div>
+      <button id="pano-close" class="ghost">返回 3D 城市 ✕</button>
+    </div>
+    <p class="pano-hint">拖动环顾四周 · 滚轮缩放 · 8K 实景</p>
+    <div id="pano-loading" class="loader"><div class="ring"></div><p>正在加载 8K 全景…</p></div>
+  </section>
+
+  <div id="toast" role="status"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
