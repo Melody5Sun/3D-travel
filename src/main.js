@@ -312,14 +312,14 @@ $('#city-btn').addEventListener('click', () => {
 function closeDrawers() {
   $('#panel').hidden = true;
   $('#guide').hidden = true;
-  body.remove('drawer');
+  body.remove('drawer-open');
 }
 
 function openDrawer(el) {
   closeDrawers();
   el.hidden = false;
   el.scrollTop = 0;
-  body.add('drawer');
+  body.add('drawer-open');
 }
 
 const drawerPadding = () => innerWidth > 760 ? { top: 60, left: 0, bottom: 0, right: 420 } : { top: 60, left: 0, right: 0, bottom: innerHeight * 0.55 };

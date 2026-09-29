@@ -105,7 +105,7 @@ body.cinema .poi.active .hint { pointer-events: auto; }
 #help { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 6px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font-size: 12px; color: var(--muted); z-index: 5; white-space: nowrap; transition: opacity .6s; }
 body:not(.explore) #spots, body:not(.explore) #help { opacity: 0; pointer-events: none; transform: translateX(-12px); }
 body:not(.explore) #help { transform: translateX(-50%); }
-body.drawer #help { opacity: 0; }
+body.drawer-open #help { opacity: 0; }
 
 /* ---------- drawers ---------- */
 .drawer { position: fixed; right: 16px; top: 78px; bottom: 16px; width: min(400px, calc(100vw - 32px)); overflow: auto; padding: 22px 22px 28px; border-radius: 18px;
