@@ -23,7 +23,7 @@ export const hideLandmarkBuildings = ['all', ...LANDMARKS.map(l =>
 // Lighting per time of day; the layer eases towards these values.
 const MODES = {
   day: { sun: 2.6, sunColor: 0xfff1dc, sunDir: [-0.45, 0.8, 0.4], hemi: 1.1, env: 1.0, glow: 0 },
-  dusk: { sun: 1.5, sunColor: 0xffa066, sunDir: [-0.9, 0.3, 0.1], hemi: 0.6, env: 0.65, glow: 0.45 },
+  dusk: { sun: 1.7, sunColor: 0xff9050, sunDir: [-0.9, 0.3, 0.1], hemi: 0.6, env: 0.65, glow: 0.45 },
   night: { sun: 0.25, sunColor: 0x8aa0ff, sunDir: [0.3, 0.9, 0.2], hemi: 0.22, env: 0.28, glow: 1 },
 };
 
@@ -108,13 +108,16 @@ function facadeTextures({ cols, rows, lit, warm, seed }) {
   n.fillStyle = '#000'; n.fillRect(0, 0, W, H);
   let s = seed;
   const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  let zone = rnd();
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    if (c === 0) zone = Math.min(1, Math.max(0, zone + (rnd() - 0.5) * 0.8)); // lit floors form clusters
+    const p = lit * (zone > 0.6 ? 2.6 : zone > 0.3 ? 0.5 : 0.05);
     const x = c * cw + 1.5, y = r * ch + 2, w = cw - 3, h = ch - 4;
     const g = 150 + rnd() * 50;
     d.fillStyle = `rgb(${g * 0.82},${g * 0.94},${Math.min(255, g * 1.08)})`; // glass pane
     d.fillRect(x, y, w, h);
-    if (rnd() < lit) {
-      const k = 0.55 + rnd() * 0.45, cool = rnd() > warm;
+    if (rnd() < p) {
+      const k = 0.4 + rnd() * 0.4, cool = rnd() > warm;
       n.fillStyle = cool ? `rgba(200,225,255,${k})` : `rgba(255,${200 + rnd() * 30},${140 + rnd() * 40},${k})`;
       n.fillRect(x, y, w, h);
     }
@@ -138,9 +141,9 @@ function makeMaterials() {
     metal: new THREE.MeshStandardMaterial({ color: 0xc7ccd2, roughness: 0.35, metalness: 0.9 }),
     pearl: new THREE.MeshStandardMaterial({ color: 0xc2336a, roughness: 0.22, metalness: 0.55, emissive: 0xff2d7c, emissiveIntensity: 0 }),
     pearlRing: new THREE.MeshStandardMaterial({ color: 0xe8e2e6, roughness: 0.3, metalness: 0.8, emissive: 0xb6a0ff, emissiveIntensity: 0 }),
-    shtower: glass(0xb4d0dc, { cols: 24, rows: 48, lit: 0.32, warm: 0.35, seed: 7 }),
-    swfc: glass(0xbccfdd, { cols: 28, rows: 48, lit: 0.3, warm: 0.5, seed: 11 }),
-    jinmao: glass(0xc9c6bd, { cols: 20, rows: 48, lit: 0.4, warm: 0.85, seed: 23 }),
+    shtower: glass(0xb4d0dc, { cols: 24, rows: 48, lit: 0.2, warm: 0.35, seed: 7 }),
+    swfc: glass(0xbccfdd, { cols: 28, rows: 48, lit: 0.18, warm: 0.5, seed: 11 }),
+    jinmao: glass(0xc9c6bd, { cols: 20, rows: 48, lit: 0.25, warm: 0.85, seed: 23 }),
     trim: new THREE.MeshStandardMaterial({ color: 0xdcdcd8, roughness: 0.3, metalness: 0.9, emissive: 0xffb54a, emissiveIntensity: 0 }),
     led: new THREE.MeshStandardMaterial({ color: 0xdfefff, roughness: 0.4, metalness: 0.2, emissive: 0x8fd8ff, emissiveIntensity: 0 }),
   };
@@ -339,9 +342,16 @@ function shanghaiTower(M) {
   });
   g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 120, 1.1, 6), M.led));
   // Podium
-  const podium = new THREE.Mesh(new THREE.CylinderGeometry(58, 60, 36, 48), M.concrete);
-  podium.position.y = 18;
-  g.add(podium);
+  // Podium: rounded triangle in plan, matching the tower's footprint.
+  const pr = a => polar(64 * (1 + 0.1 * Math.cos(3 * (a - notch0))), a);
+  g.add(new THREE.Mesh(skin([0, 36], SEG, (_, u) => pr(u * Math.PI * 2)), M.concrete));
+  g.add(new THREE.Mesh(cap(Array.from({ length: SEG }, (_, i) => pr(i / SEG * Math.PI * 2)), 36), M.concrete));
+  // Crown lights: a glowing rim along the sloped crown edge.
+  const rim = Array.from({ length: 72 }, (_, i) => {
+    const a = i / 72 * Math.PI * 2, [x, z] = polar(radius(1, a) * 0.99, a);
+    return new THREE.Vector3(x, topY(a) + 0.5, z);
+  });
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rim, true), 144, 0.9, 6, true), M.led));
   return g;
 }
 
@@ -376,6 +386,13 @@ function swfc(M) {
   loft(tA, tB, 6, (poly, t) => clip(poly, d, gap(t)));
   loft(tA, tB, 6, (poly, t) => clip(poly, [-d[0], -d[1]], gap(t)));
   loft(tB, 1, 3);
+  // Outline lights round the trapezoid opening, on both faces.
+  for (const side of [-1, 1]) {
+    const w = t => side * (2 * 29 * (1 - 0.28 * t) * Math.pow(1 - t, 0.8) / Math.SQRT2 + 0.6);
+    const v = (t, s) => { const [x, z] = P(s * d[0] - w(t) * d[1], s * d[1] + w(t) * d[0]); return [x, t * H, z]; };
+    const c = [v(tA, -gap(tA)), v(tA, gap(tA)), v(tB, gap(tB)), v(tB, -gap(tB))];
+    c.forEach((a, i) => g.add(strut(a, c[(i + 1) % 4], 0.9, M.led)));
+  }
   const podium = new THREE.Mesh(new THREE.BoxGeometry(70, 20, 70), M.concrete);
   podium.position.y = 10;
   podium.rotation.y = rot;
