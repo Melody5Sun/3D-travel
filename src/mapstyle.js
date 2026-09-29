@@ -14,13 +14,13 @@ export const MODES = {
   },
   dusk: {
     label: '黄昏', sat: [0.62, -0.1], water: 0.25, roads: 0.45,
-    sky: { 'sky-color': '#233a6e', 'horizon-color': '#ff9f6e', 'fog-color': '#e9a07c' },
-    light: { anchor: 'map', color: '#ffb07a', intensity: 0.5, position: [1.4, 265, 72] },
+    sky: { 'sky-color': '#233a6e', 'horizon-color': '#ff9558', 'fog-color': '#eb9466' },
+    light: { anchor: 'map', color: '#ffb888', intensity: 0.5, position: [1.4, 265, 72] },
   },
   night: {
     label: '夜景', sat: [0.2, -0.5], water: 0.6, roads: 1,
     sky: { 'sky-color': '#030814', 'horizon-color': '#1c2d52', 'fog-color': '#101a31' },
-    light: { anchor: 'map', color: '#a8b8ff', intensity: 0.35, position: [1.4, 200, 30] },
+    light: { anchor: 'map', color: '#b9c0dc', intensity: 0.3, position: [1.4, 200, 30] },
   },
 };
 const SKY_BASE = {
@@ -111,23 +111,36 @@ export const style = {
   ],
 };
 
-// Procedural window textures for the OSM buildings: glass curtain walls on towers, punched windows below.
+// Procedural window textures for the OSM buildings: ribbon-glazed curtain walls on towers, varied punched windows below.
+// Night lights cluster by floor (lit floors / runs of bays) rather than random dots.
 function facade(mode, tall) {
-  const S = 128, cell = 8, c = document.createElement('canvas');
+  const S = 128, c = document.createElement('canvas');
   c.width = c.height = S;
-  const g = c.getContext('2d');
-  g.fillStyle = { day: tall ? '#c3ccd3' : '#dcd3c4', dusk: tall ? '#8f8a96' : '#a9978b', night: tall ? '#121826' : '#181d28' }[mode];
+  const g = c.getContext('2d'), R = Math.random, day = mode === 'day', dusk = mode === 'dusk';
+  g.fillStyle = { day: tall ? '#aab4bc' : '#d8cfc0', dusk: tall ? '#6c6a78' : '#8d8583', night: tall ? '#17171c' : '#1d1b20' }[mode];
   g.fillRect(0, 0, S, S);
-  for (let y = 0; y < S; y += cell) {
-    const occupancy = mode === 'day' ? 0 : (Math.random() < 0.5 ? 0.55 : 0.12) * (mode === 'dusk' ? 0.35 : 1); // floors light up unevenly
-    for (let x = 0; x < S; x += cell) {
-      if (Math.random() < occupancy) {
-        g.fillStyle = `hsla(${32 + Math.random() * 18}, 100%, ${68 + Math.random() * 22}%, ${0.55 + Math.random() * 0.45})`;
-      } else if (mode === 'day') {
-        const k = (tall ? 150 : 95) + Math.random() * 40;
-        g.fillStyle = `rgb(${k - 28},${k - 6},${k + 18})`;
-      } else g.fillStyle = mode === 'dusk' ? '#4d4f63' : '#222b3e';
-      tall ? g.fillRect(x + 1, y + 1, cell - 1, cell - 2) : g.fillRect(x + 2, y + 2, cell - 4, cell - 3);
+  const glass = () => {
+    if (day) { const k = (tall ? 140 : 100) + R() * 40; return `rgb(${k - 30},${k - 8},${k + 16})`; }
+    return dusk ? `rgb(${88 + R() * 22},${84 + R() * 16},${98 + R() * 18})` : `rgb(${30 + R() * 10},${34 + R() * 10},${44 + R() * 12})`;
+  };
+  const warm = () => `hsla(${28 + R() * 20}, 100%, ${66 + R() * 22}%, ${0.6 + R() * 0.4})`;
+  let zone = R(); // drifts slowly floor to floor so lit floors form clusters
+  const floorH = tall ? 8 : 16;
+  for (let y = 0, row = 0; y < S; y += floorH, row++) {
+    zone = Math.min(1, Math.max(0, zone + (R() - 0.5) * 0.7));
+    const lit = day ? 0 : (zone > 0.6 ? 0.7 : zone > 0.3 ? 0.18 : 0.02) * (dusk ? 0.4 : 1);
+    if (tall) { // continuous ribbon glazing broken by mullions every bay
+      const bay = R() < 0.5 ? 16 : 32;
+      for (let x = 0; x < S; x += bay) {
+        g.fillStyle = R() < lit ? warm() : glass();
+        g.fillRect(x, y + 2, bay - 1, floorH - 4);
+      }
+    } else { // per-floor window type: punched, paired, or wide strip
+      const type = row % 3, w = [8, 20, 40][type], gap = [8, 12, 8][type];
+      for (let x = (row * 5) % 8; x < S; x += w + gap) {
+        g.fillStyle = R() < lit * 1.3 ? warm() : glass();
+        g.fillRect(x, y + 3, w, floorH - 7);
+      }
     }
   }
   return g.getImageData(0, 0, S, S);
