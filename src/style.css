@@ -209,4 +209,6 @@ body.cinema .maplibregl-ctrl-bottom-right, body.picking .maplibregl-ctrl-bottom-
   .hero { height: 170px; }
   .caption { left: 5vw; }
   .poi .name { display: none; }
+  .maplibregl-ctrl-bottom-right { bottom: 64px; }
+  body.drawer-open .poi .hint { display: none; }
 }
