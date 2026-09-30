@@ -48,14 +48,15 @@ export const CITIES = [
     // orbit: [lng, lat, targetAlt, radius, cameraAlt, fromBearing, toBearing] (bearing from target to camera).
     tour: [
       { title: '外滩', sub: 'THE BUND · 万国建筑博览群', spot: 'bund', dur: 11, mode: 'day',
-        cam: [[121.4893, 31.2318, 270], [121.4880, 31.2445, 310]], look: [[121.5000, 31.2368, 150], [121.4995, 31.2402, 170]] },
+        // From over the Huangpu / Pudong bank looking west at the Bund facades, so no building stands between camera and subject.
+        cam: [[121.5005, 31.2285, 260], [121.4975, 31.2430, 220]], look: [[121.4885, 31.2340, 45], [121.4868, 31.2400, 50]] },
       { title: '东方明珠', sub: 'ORIENTAL PEARL TOWER · 468 m', spot: 'pearl', dur: 10, mode: 'day',
         orbit: [121.49527, 31.2419, 220, 560, 300, 245, 325] },
       { title: '陆家嘴', sub: 'LUJIAZUI · 金融城天际线', spot: 'jinmao', dur: 10, mode: 'dusk',
         cam: [[121.4950, 31.2318, 150], [121.4948, 31.2312, 520]], look: [[121.5022, 31.2363, 140], [121.5022, 31.2363, 330]] },
       { title: '上海中心大厦', sub: 'SHANGHAI TOWER · 632 m 中国第一高楼', spot: 'shtower', dur: 10, mode: 'dusk',
         orbit: [121.5013, 31.23558, 380, 650, 560, 110, 190] },
-      { title: '豫园', sub: 'YU GARDEN · 江南古典园林', spot: 'yuyuan', dur: 8, mode: 'night',
+      { title: '豫园', sub: 'YU GARDEN · 江南古典园林', spot: 'yuyuan', dur: 8, mode: 'dusk',
         orbit: [121.48775, 31.22892, 10, 330, 170, 190, 250] },
       { title: '南京路步行街', sub: 'NANJING ROAD · 中华商业第一街', spot: 'nanjingrd', dur: 9, mode: 'night',
         cam: [[121.4700, 31.2358, 190], [121.4806, 31.2393, 190]], look: [[121.4768, 31.2380, 20], [121.4880, 31.2405, 40]] },
@@ -133,7 +134,7 @@ export const CITIES = [
         tips: ['交通：地铁1/6号线黄沙站', '适合拍照漫步'] },
       { id: 'chenjiaci', name: '陈家祠', en: 'Chen Clan Ancestral Hall', ll: [113.24013, 23.12983], h: 20, wiki: '陈家祠',
         desc: '建于清光绪年间的广东陈氏合族祠，砖雕、木雕、石雕与灰塑集岭南建筑装饰艺术之大成，现为广东民间工艺博物馆。',
-        tips: ['交通：地铁1/8号线陈家祠站', '周一闭馆'] },
+        tips: ['交通：地铁1/8号线陈家祠站', '出行前请查看官方开放时间'] },
     ],
   },
   {
