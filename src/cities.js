@@ -6,7 +6,7 @@ const POLYHAVEN = 'https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemappe
 
 export const CITIES = [
   {
-    id: 'shanghai', name: '上海', en: 'Shanghai', tagline: '海纳百川 · 追求卓越', color: '#e0457b',
+    id: 'shanghai', name: '上海', en: 'Shanghai', tagline: '海纳百川 · 追求卓越', color: '#e0457b', film: 'gold',
     view: { center: [121.4975, 31.2365], zoom: 14.3, pitch: 62, bearing: 40 },
     spots: [
       { id: 'bund', name: '外滩', en: 'The Bund', ll: [121.48665, 31.2388], h: 60, wiki: '外滩',
@@ -64,7 +64,7 @@ export const CITIES = [
     ],
   },
   {
-    id: 'beijing', name: '北京', en: 'Beijing', tagline: '千年古都 · 中轴之城', color: '#d4412f',
+    id: 'beijing', name: '北京', en: 'Beijing', tagline: '千年古都 · 中轴之城', color: '#d4412f', film: 'ink',
     view: { center: [116.3935, 39.9085], zoom: 14, pitch: 60, bearing: 0 },
     spots: [
       { id: 'gugong', name: '故宫', en: 'Forbidden City', ll: [116.39077, 39.91728], h: 35, wiki: '故宫',
@@ -89,7 +89,7 @@ export const CITIES = [
     ],
   },
   {
-    id: 'hangzhou', name: '杭州', en: 'Hangzhou', tagline: '上有天堂 · 下有苏杭', color: '#3aa37a', terrain: true,
+    id: 'hangzhou', name: '杭州', en: 'Hangzhou', tagline: '上有天堂 · 下有苏杭', color: '#3aa37a', film: 'jade', terrain: true,
     view: { center: [120.1480, 30.2480], zoom: 13.6, pitch: 58, bearing: 250 },
     spots: [
       { id: 'xihu', name: '西湖', en: 'West Lake', ll: [120.14313, 30.24598], h: 10, wiki: '西湖',
@@ -113,7 +113,7 @@ export const CITIES = [
     ],
   },
   {
-    id: 'guangzhou', name: '广州', en: 'Guangzhou', tagline: '千年商都 · 花城', color: '#e8883a',
+    id: 'guangzhou', name: '广州', en: 'Guangzhou', tagline: '千年商都 · 花城', color: '#e8883a', film: 'bloom',
     view: { center: [113.3215, 23.1125], zoom: 14, pitch: 62, bearing: 350 },
     spots: [
       { id: 'cantontower', name: '广州塔', en: 'Canton Tower', ll: [113.31915, 23.10901], h: 600, wiki: '广州塔',
@@ -137,7 +137,7 @@ export const CITIES = [
     ],
   },
   {
-    id: 'hongkong', name: '香港', en: 'Hong Kong', tagline: '东方之珠 · 维港夜色', color: '#2f8fd8', terrain: true,
+    id: 'hongkong', name: '香港', en: 'Hong Kong', tagline: '东方之珠 · 维港夜色', color: '#2f8fd8', film: 'neon', terrain: true,
     view: { center: [114.1640, 22.2905], zoom: 13.8, pitch: 65, bearing: 165 },
     spots: [
       { id: 'harbour', name: '维多利亚港', en: 'Victoria Harbour', ll: [114.172, 22.2935], h: 10, wiki: '维多利亚港',
@@ -161,7 +161,7 @@ export const CITIES = [
     ],
   },
   {
-    id: 'chongqing', name: '重庆', en: 'Chongqing', tagline: '8D 魔幻 · 山水之城', color: '#c9474a', terrain: true,
+    id: 'chongqing', name: '重庆', en: 'Chongqing', tagline: '8D 魔幻 · 山水之城', color: '#c9474a', film: 'cyber', terrain: true,
     view: { center: [106.5780, 29.5620], zoom: 14.2, pitch: 65, bearing: 225 },
     spots: [
       { id: 'hongyadong', name: '洪崖洞', en: 'Hongyadong', ll: [106.57488, 29.56476], h: 60, wiki: '洪崖洞',
@@ -182,7 +182,7 @@ export const CITIES = [
     ],
   },
   {
-    id: 'tokyo', name: '东京', en: 'Tokyo', tagline: '霓虹与传统交织', color: '#e25563',
+    id: 'tokyo', name: '东京', en: 'Tokyo', tagline: '霓虹与传统交织', color: '#e25563', film: 'sakura',
     view: { center: [139.7454, 35.6700], zoom: 12.8, pitch: 60, bearing: 20 },
     spots: [
       { id: 'tokyotower', name: '东京塔', en: 'Tokyo Tower', ll: [139.74554, 35.65845], h: 333, wiki: '东京铁塔',
@@ -206,7 +206,7 @@ export const CITIES = [
     ],
   },
   {
-    id: 'newyork', name: '纽约', en: 'New York', tagline: '不眠之城', color: '#e0b43a',
+    id: 'newyork', name: '纽约', en: 'New York', tagline: '不眠之城', color: '#e0b43a', film: 'steel',
     view: { center: [-73.9990, 40.7270], zoom: 12.9, pitch: 62, bearing: 28 },
     spots: [
       { id: 'esb', name: '帝国大厦', en: 'Empire State Building', ll: [-73.98566, 40.74844], h: 443, wiki: '帝国大厦',
@@ -230,7 +230,7 @@ export const CITIES = [
     ],
   },
   {
-    id: 'paris', name: '巴黎', en: 'Paris', tagline: '浪漫之都 · 光之城', color: '#8a7ae0',
+    id: 'paris', name: '巴黎', en: 'Paris', tagline: '浪漫之都 · 光之城', color: '#8a7ae0', film: 'rose',
     view: { center: [2.3200, 48.8600], zoom: 13, pitch: 60, bearing: 290 },
     spots: [
       { id: 'eiffel', name: '埃菲尔铁塔', en: 'Eiffel Tower', ll: [2.2945, 48.85826], h: 330, wiki: '埃菲尔铁塔',

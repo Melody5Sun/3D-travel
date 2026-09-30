@@ -63,13 +63,18 @@ async function tilesReady(ms) {
 }
 
 // Camera for a tour shot at progress t (0..1). Orbit bearings are measured from the target to the camera.
+// g: ground elevation added to all altitudes; roll: dutch angle that swells mid-shot.
 function shotCamera(s, t, g = 0) {
   const e = 0.5 - Math.cos(Math.PI * t) / 2;
+  let opts;
   if (s.orbit) {
     const [lng, lat, targetAlt, r, camAlt, b0, b1] = s.orbit, b = (b0 + (b1 - b0) * e) * DEG;
-    return lookFrom([...offset([lng, lat], r * Math.sin(b), r * Math.cos(b)), camAlt + g], [lng, lat, targetAlt + g]);
+    opts = lookFrom([...offset([lng, lat], r * Math.sin(b), r * Math.cos(b)), camAlt + g], [lng, lat, targetAlt + g]);
+  } else {
+    const c = lerp(s.cam[0], s.cam[1], e), l = lerp(s.look[0], s.look[1], e);
+    opts = lookFrom([c[0], c[1], c[2] + g], [l[0], l[1], l[2] + g]);
   }
-  return lookFrom(lerp(s.cam[0], s.cam[1], e), lerp(s.look[0], s.look[1], e));
+  return { ...opts, roll: (s.roll ?? 0) * Math.sin(Math.PI * t) };
 }
 
 // A pleasant three-quarter view of a spot, camera placed behind the current bearing.
@@ -78,19 +83,48 @@ function spotView(s, r = Math.max(420, s.h * 1.9)) {
   return lookFrom([...offset(s.ll, r * Math.sin(b), r * Math.cos(b)), g + r * 0.55 + s.h * 0.3], [...s.ll, g + s.h * 0.4]);
 }
 
-function autoTour(city) {
-  const modes = ['day', 'day', 'dusk', 'dusk', 'night', 'night'];
+// Each city's promo has its own look: colour grade, title treatment, letterbox, pacing, cuts and time-of-day arc.
+// grade: CSS filter on the map; pace: shot length factor; roll: dutch angle (deg); fade: [colour, out ms, in ms].
+const FILMS = {
+  gold: { name: '海派金调', modes: ['day', 'dusk', 'night'], grade: 'contrast(1.06) saturate(1.12) sepia(.08)', accent: '#f2c36b', bar: 11 },
+  ink: { name: '水墨', modes: ['day', 'day', 'dusk'], grade: 'saturate(.72) sepia(.22) contrast(1.1)', accent: '#c8322a', bar: 9, pace: 1.1, fade: ['#f1ece2', 700, 900] },
+  jade: { name: '烟雨', modes: ['day', 'day', 'dusk'], grade: 'saturate(.9) hue-rotate(-8deg) brightness(1.05) contrast(.96)', accent: '#8fd6b4', bar: 10, pace: 1.15, fade: ['#eef4f0', 800, 1000] },
+  bloom: { name: '花城暖调', modes: ['dusk', 'dusk', 'night'], grade: 'saturate(1.2) contrast(1.05) sepia(.06)', accent: '#ff8a5b', bar: 11 },
+  neon: { name: '霓虹', modes: ['dusk', 'night', 'night'], grade: 'contrast(1.12) saturate(1.2)', accent: '#35d0ff', bar: 12, pace: 0.9 },
+  cyber: { name: '赛博 8D', modes: ['night'], grade: 'contrast(1.14) saturate(1.3) hue-rotate(-8deg)', accent: '#ff3d6e', bar: 12, pace: 0.8, roll: 7, fade: ['#000', 120, 260] },
+  sakura: { name: '和风', modes: ['day', 'dusk', 'night'], grade: 'saturate(1.08) contrast(1.04) brightness(1.03)', accent: '#ff86a8', bar: 11 },
+  steel: { name: '钢铁森林', modes: ['day', 'dusk', 'night'], grade: 'contrast(1.18) saturate(.75)', accent: '#ffd23f', bar: 13, english: true, pace: 0.9 },
+  rose: { name: '玫瑰金', modes: ['dusk', 'dusk', 'night'], grade: 'sepia(.18) saturate(1.1) brightness(1.03)', accent: '#f1c7a1', bar: 11, pace: 1.1, fade: ['#1a0f0a', 600, 900] },
+};
+const filmOf = city => FILMS[city.film] ?? FILMS.gold;
+
+// Shots are chosen by what the subject is: towers get a rising crane, mid-height sights a lateral fly-by,
+// low sights a descending reveal, alternating with orbits so no two neighbouring shots move alike.
+function autoTour(city, film) {
+  const v = city.view, n = city.spots.length, pace = film.pace ?? 1;
+  const mode = i => film.modes[Math.min(film.modes.length - 1, Math.floor(i / (n + 1) * film.modes.length))];
   const shots = city.spots.map((s, i) => {
-    const r = Math.max(380, s.h * 1.7), b0 = (i * 67 + 200) % 360;
+    const b = (v.bearing + 180 + i * 71) % 360, h = s.h, at = (r, deg, alt) => [...offset(s.ll, r * Math.sin(deg * DEG), r * Math.cos(deg * DEG)), alt];
+    let move;
+    if (h >= 200 && i % 2 === 0) { // crane up the tower
+      const r = Math.max(480, h * 1.3);
+      move = { cam: [at(r, b, h * 0.5), at(r * 1.1, b + 20, h * 1.2)], look: [[...s.ll, h * 0.35], [...s.ll, h * 0.85]] };
+    } else if (h >= 50 && h < 200 && i % 2 === 0) { // fly past
+      const r = Math.max(380, h * 2.2), alt = r * 0.35 + h * 0.5;
+      move = { cam: [at(r, b - 35, alt), at(r, b + 35, alt)], look: [[...s.ll, h * 0.5], [...s.ll, h * 0.5]] };
+    } else if (h < 50 && i % 2 === 0) { // descend from above
+      move = { cam: [at(150, b, 700), at(520, b + 25, 280)], look: [[...s.ll, 0], [...s.ll, h * 0.3]] };
+    } else {
+      const r = Math.max(380, h * 1.7), sweep = i % 4 === 1 ? 55 : -55;
+      move = { orbit: [...s.ll, h * 0.45, r, r * 0.45 + h * 0.35, b, b + sweep] };
+    }
     return {
-      title: s.name, sub: s.en.toUpperCase(), spot: s.id, dur: 8, ground: true,
-      mode: modes[Math.floor(i / city.spots.length * modes.length)],
-      orbit: [...s.ll, s.h * 0.45, r, r * 0.45 + s.h * 0.35, b0, b0 + 55],
+      title: s.name, sub: s.en.toUpperCase(), spot: s.id, dur: 8 * pace, ground: true, mode: mode(i + 1),
+      roll: film.roll ? (i % 2 ? film.roll : -film.roll) : 0, ...move,
     };
   });
-  const v = city.view;
   shots.push({
-    title: city.name, sub: `${city.en.toUpperCase()} · ${city.tagline}`, dur: 12, mode: 'night', ground: true,
+    title: city.name, sub: `${city.en.toUpperCase()} · ${city.tagline}`, dur: 12 * pace, mode: film.modes.at(-1), ground: true,
     orbit: [...v.center, 80, 2600, 1100, v.bearing + 160, v.bearing + 215],
   });
   return shots;
@@ -132,7 +166,13 @@ async function playTour(city = state.city, token = stopTour()) {
   body.add('cinema');
   setLabels(false);
   map.jumpTo({ padding: { top: 0, right: 0, bottom: 0, left: 0 } });
-  const shots = city.tour ?? autoTour(city);
+  const film = filmOf(city), [fadeColor, fadeOut, fadeIn] = film.fade ?? ['#000', 450, 700];
+  document.body.dataset.film = city.film ?? 'gold';
+  document.body.style.setProperty('--accent', film.accent);
+  document.body.style.setProperty('--grade', film.grade);
+  document.body.style.setProperty('--film-bar', film.bar + 'vh');
+  fader.style.background = fadeColor;
+  const shots = city.tour ?? autoTour(city, film);
   const total = shots.reduce((sum, s) => sum + s.dur, 0);
   let elapsed = 0;
   const progress = t => { $('#cin-progress').style.width = `${Math.min(100, t * 100)}%`; };
@@ -140,8 +180,9 @@ async function playTour(city = state.city, token = stopTour()) {
 
   setMode(shots[0].mode);
   const card = $('#title-card');
-  card.querySelector('h1').textContent = city.name;
-  card.querySelector('p').textContent = `${city.en.toUpperCase()} · ${city.tagline}`;
+  card.querySelector('h1').textContent = film.english ? city.en.toUpperCase() : city.name;
+  card.querySelector('p').textContent = `${film.english ? city.name : city.en.toUpperCase()} · ${city.tagline}`;
+  card.querySelector('.seal').textContent = city.name;
   card.classList.add('in');
 
   // Establishing flight (from space when arriving from the globe).
@@ -156,12 +197,12 @@ async function playTour(city = state.city, token = stopTour()) {
   for (let i = 0; i < shots.length; i++) {
     const s = shots[i];
     if (i > 0) {
-      await fade(true, 450);
+      await fade(true, fadeOut);
       if (token !== state.run) return fade(false, 300);
       setMode(s.mode);
       map.jumpTo(shotCamera(s, 0, s.ground ? ground(s.orbit?.slice(0, 2) ?? s.look[0]) : 0));
       await tilesReady(2500);
-      fade(false, 700);
+      fade(false, fadeIn);
     }
     showCaption(s, i, shots.length);
     highlight(s.spot);
@@ -193,6 +234,7 @@ function explore() {
   fade(false, 300);
   setLabels(true);
   highlight(null);
+  if (map.getRoll()) map.jumpTo({ roll: 0 });
 }
 
 // Any direct interaction during the promo hands control to the viewer.
@@ -262,7 +304,7 @@ function showPicker(autostart) {
     <button class="city-card" data-id="${c.id}" style="--c:${c.color}">
       ${i === 0 ? '<span class="badge">默认</span>' : ''}
       <b>${esc(c.name)}</b><small>${esc(c.en)}</small><span>${esc(c.tagline)}</span>
-      <em>${c.spots.length} 个景点${c.tour ? ' · 专属宣传片' : ''}${c.spots.some(s => s.pano) ? ' · 360°' : ''}</em>
+      <em>${c.spots.length} 个景点 · ${filmOf(c).name}宣传片${c.spots.some(s => s.pano) ? ' · 360°' : ''}</em>
     </button>`).join('');
   clearInterval(countdownTimer);
   const cd = $('#countdown');
