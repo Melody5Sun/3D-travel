@@ -8,17 +8,17 @@ const MAJOR_ROADS = ['motorway', 'trunk', 'primary', 'secondary', 'tertiary'];
 
 export const MODES = {
   day: {
-    label: '白天', sat: [1, 0.05], water: 0, roads: 0,
+    label: '白天', sat: [1, 0.05], water: 0, roads: 0, roof: ['#cfc6b8', '#a9b1b8'],
     sky: { 'sky-color': '#76aee9', 'horizon-color': '#eef2f6', 'fog-color': '#e4ebf3' },
     light: { anchor: 'map', color: '#fff3e2', intensity: 0.4, position: [1.4, 215, 40] },
   },
   dusk: {
-    label: '黄昏', sat: [0.62, -0.1], water: 0.25, roads: 0.45,
-    sky: { 'sky-color': '#233a6e', 'horizon-color': '#ff9558', 'fog-color': '#eb9466' },
-    light: { anchor: 'map', color: '#ffb888', intensity: 0.5, position: [1.4, 265, 72] },
+    label: '黄昏', sat: [0.62, -0.1], water: 0.25, roads: 0.45, roof: ['#8c7468', '#6f6570'],
+    sky: { 'sky-color': '#2b3370', 'horizon-color': '#ff8a4c', 'fog-color': '#f0976a' },
+    light: { anchor: 'map', color: '#ffb07a', intensity: 0.5, position: [1.4, 265, 72] },
   },
   night: {
-    label: '夜景', sat: [0.2, -0.5], water: 0.6, roads: 1,
+    label: '夜景', sat: [0.2, -0.5], water: 0.6, roads: 1, roof: ['#1a1b20', '#16181e'],
     sky: { 'sky-color': '#030814', 'horizon-color': '#1c2d52', 'fog-color': '#101a31' },
     light: { anchor: 'map', color: '#b9c0dc', intensity: 0.3, position: [1.4, 200, 30] },
   },
@@ -80,6 +80,16 @@ export const style = {
       },
     },
     {
+      // Patterns also cover the tops, so cap every building with a thin solid roof slab.
+      id: 'roofs', type: 'fill-extrusion', source: 'ofm', 'source-layer': 'building', minzoom: 12.5,
+      filter: ['all', ['!=', ['get', 'hide_3d'], true], hideLandmarkBuildings],
+      paint: {
+        'fill-extrusion-color': '#c9c3b8',
+        'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 12.5, 0, 13.5, ['+', ['get', 'render_height'], 0.15]],
+        'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 12.5, 0, 13.5, ['max', ['get', 'render_min_height'], ['-', ['get', 'render_height'], 0.6]]],
+      },
+    },
+    {
       id: 'shops-dot', type: 'circle', source: 'shops',
       paint: { 'circle-radius': 5, 'circle-color': '#f2c36b', 'circle-stroke-color': '#1a1206', 'circle-stroke-width': 1.5, 'circle-pitch-alignment': 'map' },
     },
@@ -111,35 +121,37 @@ export const style = {
   ],
 };
 
-// Procedural window textures for the OSM buildings: ribbon-glazed curtain walls on towers, varied punched windows below.
-// Night lights cluster by floor (lit floors / runs of bays) rather than random dots.
+// Procedural facades for the OSM buildings: towers get ribbon glazing (one glass band per floor), low buildings
+// punched windows. At night lights come on in runs along a floor and some floors stay dark.
 function facade(mode, tall) {
-  const S = 128, c = document.createElement('canvas');
+  const S = 96, fh = 12, c = document.createElement('canvas');
   c.width = c.height = S;
-  const g = c.getContext('2d'), R = Math.random, day = mode === 'day', dusk = mode === 'dusk';
-  g.fillStyle = { day: tall ? '#aab4bc' : '#d8cfc0', dusk: tall ? '#6c6a78' : '#8d8583', night: tall ? '#17171c' : '#1d1b20' }[mode];
+  const g = c.getContext('2d');
+  let s = tall ? 7 : 3; // seeded, so the city looks the same on every visit
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  g.fillStyle = { day: tall ? '#b7c0c7' : '#d9d0c1', dusk: tall ? '#7d7076' : '#9e8878', night: tall ? '#0f1116' : '#17181c' }[mode];
   g.fillRect(0, 0, S, S);
-  const glass = () => {
-    if (day) { const k = (tall ? 140 : 100) + R() * 40; return `rgb(${k - 30},${k - 8},${k + 16})`; }
-    return dusk ? `rgb(${88 + R() * 22},${84 + R() * 16},${98 + R() * 18})` : `rgb(${30 + R() * 10},${34 + R() * 10},${44 + R() * 12})`;
-  };
-  const warm = () => `hsla(${28 + R() * 20}, 100%, ${66 + R() * 22}%, ${0.6 + R() * 0.4})`;
-  let zone = R(); // drifts slowly floor to floor so lit floors form clusters
-  const floorH = tall ? 8 : 16;
-  for (let y = 0, row = 0; y < S; y += floorH, row++) {
-    zone = Math.min(1, Math.max(0, zone + (R() - 0.5) * 0.7));
-    const lit = day ? 0 : (zone > 0.6 ? 0.7 : zone > 0.3 ? 0.18 : 0.02) * (dusk ? 0.4 : 1);
-    if (tall) { // continuous ribbon glazing broken by mullions every bay
-      const bay = R() < 0.5 ? 16 : 32;
-      for (let x = 0; x < S; x += bay) {
-        g.fillStyle = R() < lit ? warm() : glass();
-        g.fillRect(x, y + 2, bay - 1, floorH - 4);
+  const light = hue => `hsla(${hue}, 90%, ${68 + rnd() * 16}%, ${0.6 + rnd() * 0.35})`;
+  for (let y = 0; y < S; y += fh) {
+    const floorLit = mode === 'day' ? 0 : (rnd() < 0.5 ? 0.7 : 0.06) * (mode === 'dusk' ? 0.45 : 1);
+    let on = rnd() < floorLit, hue = 28 + rnd() * 18;
+    const switchRun = () => { if (rnd() < 0.25) { on = rnd() < floorLit; hue = 28 + rnd() * 18; } };
+    if (tall) {
+      const k = 148 + rnd() * 45; // reflections change floor by floor
+      g.fillStyle = mode === 'day' ? `rgb(${k * 0.72},${k * 0.86},${k * 1.04})`
+        : mode === 'dusk' ? `rgb(${150 + rnd() * 35},${100 + rnd() * 25},${92 + rnd() * 20})` : '#1b1e26';
+      g.fillRect(0, y + 3, S, fh - 5);
+      for (let x = 0; x < S; x += 6) {
+        switchRun();
+        if (on) { g.fillStyle = light(hue); g.fillRect(x, y + 3, 6, fh - 5); }
+        g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(x, y + 3, 1, fh - 5); // mullion
       }
-    } else { // per-floor window type: punched, paired, or wide strip
-      const type = row % 3, w = [8, 20, 40][type], gap = [8, 12, 8][type];
-      for (let x = (row * 5) % 8; x < S; x += w + gap) {
-        g.fillStyle = R() < lit * 1.3 ? warm() : glass();
-        g.fillRect(x, y + 3, w, floorH - 7);
+    } else {
+      for (let x = 2; x < S; x += 8) {
+        switchRun();
+        const k = 78 + rnd() * 30;
+        g.fillStyle = on ? light(hue) : { day: `rgb(${k - 22},${k - 12},${k})`, dusk: '#4b434a', night: '#20222a' }[mode];
+        g.fillRect(x, y + 3, 4, fh - 6);
       }
     }
   }
@@ -160,5 +172,6 @@ export function applyMode(map, name) {
   map.setPaintProperty('water', 'fill-opacity', m.water);
   map.setPaintProperty('roads-glow', 'line-opacity', m.roads * 0.55);
   map.setPaintProperty('roads-core', 'line-opacity', m.roads * 0.8);
+  map.setPaintProperty('roofs', 'fill-extrusion-color', ['case', ['>=', ['get', 'render_height'], 60], m.roof[1], m.roof[0]]);
   map.setPaintProperty('buildings', 'fill-extrusion-pattern', ['case', ['>=', ['get', 'render_height'], 60], `tall-${name}`, `low-${name}`]);
 }
