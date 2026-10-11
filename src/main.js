@@ -78,7 +78,7 @@ function shotCamera(s, t, g = 0) {
 }
 
 // A pleasant three-quarter view of a spot, camera placed behind the current bearing.
-function spotView(s, r = Math.max(420, s.h * 1.9)) {
+function spotView(s, r = Math.max(420, s.h * 1.9, (s.span ?? 0) * 0.8)) {
   const g = ground(s.ll), b = (map.getBearing() + 180) * DEG;
   return lookFrom([...offset(s.ll, r * Math.sin(b), r * Math.cos(b)), g + r * 0.55 + s.h * 0.3], [...s.ll, g + s.h * 0.4]);
 }
@@ -106,9 +106,11 @@ function autoTour(city, film) {
   const shots = city.spots.map((s, i) => {
     const b = (v.bearing + 180 + i * 71) % 360, h = s.h, at = (r, deg, alt) => [...offset(s.ll, r * Math.sin(deg * DEG), r * Math.cos(deg * DEG)), alt];
     let move;
-    if (h >= 200 && i % 2 === 0) { // crane up the tower
+    if (s.span) { // lakes, harbours, parks: stand back far enough to take in the whole thing
+      move = { orbit: [...s.ll, 0, s.span * 0.9, s.span * 0.5, b, b + 40] };
+    } else if (h >= 200 && i % 2 === 0) { // crane up the tower, starting above the neighbours' roofs
       const r = Math.max(480, h * 1.3);
-      move = { cam: [at(r, b, h * 0.5), at(r * 1.1, b + 20, h * 1.2)], look: [[...s.ll, h * 0.35], [...s.ll, h * 0.85]] };
+      move = { cam: [at(r, b, h * 0.8), at(r * 1.1, b + 20, h * 1.25)], look: [[...s.ll, h * 0.35], [...s.ll, h * 0.85]] };
     } else if (h >= 50 && h < 200 && i % 2 === 0) { // fly past
       const r = Math.max(380, h * 2.2), alt = r * 0.35 + h * 0.5;
       move = { cam: [at(r, b - 35, alt), at(r, b + 35, alt)], look: [[...s.ll, h * 0.5], [...s.ll, h * 0.5]] };
@@ -439,13 +441,18 @@ async function loadShops(s, box) {
   box.innerHTML = '<p class="muted">正在搜索 600 米内的餐厅、咖啡与商店…</p>';
   const quick = tileShops(s.ll);
   if (quick.length) renderShops(box, quick, 'OpenFreeMap 矢量瓦片（OpenStreetMap 数据）', true);
+  // The quick list stays as it is (the reader may already be filtering it); only its "pending" note changes.
+  const settle = note => { const el = box.querySelector('.source'); el.textContent = el.textContent.replace(' · 正在获取实时详情…', note); };
   try {
     const items = await nearbyShops(s.ll);
-    if (req === state.shopReq && items.length) renderShops(box, items, 'Overpass API（OpenStreetMap 实时数据）');
-    else if (req === state.shopReq && !quick.length) box.innerHTML = '<p class="muted">附近暂无收录的店铺。</p>';
+    if (req !== state.shopReq) return;
+    if (items.length) renderShops(box, items, 'Overpass API（OpenStreetMap 实时数据）');
+    else if (quick.length) settle('');
+    else box.innerHTML = '<p class="muted">附近暂无收录的店铺。</p>';
   } catch {
-    if (req === state.shopReq && !quick.length) box.innerHTML = '<p class="muted">店铺数据服务繁忙，请稍后重试。</p>';
-    else if (req === state.shopReq) box.querySelector('.source').textContent += ' · 实时接口繁忙，已显示缓存数据';
+    if (req !== state.shopReq) return;
+    if (quick.length) settle(' · 实时接口繁忙');
+    else box.innerHTML = '<p class="muted">店铺数据服务繁忙，请稍后重试。</p>';
   }
 }
 
@@ -580,6 +587,7 @@ addEventListener('blur', () => keys.clear());
 // ---------- boot ----------
 
 map.on('load', () => {
+  map.resize(); // the canvas stays at MapLibre's 400×300 fallback if the page was laid out at zero size on creation
   registerFacades(map);
   map.addLayer(landmarks, 'shops-dot');
   setMode('day');
@@ -589,4 +597,11 @@ map.on('load', () => {
 });
 
 // Handy for debugging in the console.
-Object.assign(window, { map, state, CITIES, enterCity, playTour, setMode });
+// showShot(i, t): jump to shot i of the current city's promo at progress t, to check framing without playing it.
+const showShot = (i, t = 0.5) => {
+  const s = (state.city.tour ?? autoTour(state.city, filmOf(state.city)))[i];
+  setMode(s.mode);
+  map.jumpTo(shotCamera(s, t, s.ground ? ground(s.orbit?.slice(0, 2) ?? s.look[0]) : 0));
+  return s;
+};
+Object.assign(window, { map, state, CITIES, enterCity, playTour, setMode, showShot });

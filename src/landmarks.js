@@ -21,6 +21,7 @@ const LANDMARKS = [
   { city: 'hangzhou', ll: [120.145, 30.23386], hide: 26, build: leifeng },
   { city: 'guangzhou', ll: [113.31914, 23.10901], hide: 40, build: cantonTower },
   { city: 'hongkong', ll: [114.16155, 22.27929], hide: 30, build: bocTower },
+  { city: 'hongkong', ll: [114.16023, 22.30338], hide: 30, build: icc }, // OSM only maps its 110 m base wedges as 3D parts
   { city: 'tokyo', ll: [139.74545, 35.65859], hide: 60, build: tokyoTower },
   { city: 'tokyo', ll: [139.81071, 35.71005], hide: 40, build: skytree },
   { city: 'newyork', ll: [-74.01319, 40.713], hide: 30, build: oneWtc },
@@ -705,6 +706,20 @@ function bocTower(M) {
   }
   for (const [x, z] of [P(-15, -3), P(-15, 6)]) mesh(g, new THREE.CylinderGeometry(0.5, 1, 80, 8), M.metal, 327.5, [x, z]);
   g.add(new THREE.Mesh(prism(rect(P, a + 3, a + 3), 0, 12), M.concrete));
+  return g;
+}
+
+// 环球贸易广场 484 m: square shaft with notched corners, tapering near the top; the facade runs past the roof as a crown.
+function icc(M) {
+  const g = new THREE.Group(), H = 484, L = 24, SEG = 64, P = axes(42);
+  const half = table([[0, 28], [0.8, 27.5], [1, 23]]);
+  const mat = M.glass(0x9fb3c4, { cols: 32, rows: 48, lit: 0.3, warm: 0.5, seed: 41, band: true }, [1 / 64, 1 / 211]);
+  const rings = Array.from({ length: L + 1 }, (_, j) => {
+    const a = half(j / L), n = a * 0.85;
+    return resample([[-n, -a], [n, -a], [a, -n], [a, n], [n, a], [-n, a], [-a, n], [-a, -n]].map(([p, q]) => P(p, q)), SEG);
+  });
+  g.add(new THREE.Mesh(skin(rings.map((_, j) => j / L * H), SEG, (j, u) => rings[j][Math.round(u * SEG) % SEG], 220), mat));
+  g.add(new THREE.Mesh(cap(rings[L], H - 10), M.metal));
   return g;
 }
 

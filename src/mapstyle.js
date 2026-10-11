@@ -13,9 +13,9 @@ export const MODES = {
     light: { anchor: 'map', color: '#fff3e2', intensity: 0.4, position: [1.4, 215, 40] },
   },
   dusk: {
-    label: '黄昏', sat: [0.62, -0.1], water: 0.25, roads: 0.45, roof: ['#8c7468', '#6f6570'],
+    label: '黄昏', sat: [0.62, -0.1], water: 0.25, roads: 0.45, roof: ['#8f8680', '#77747c'],
     sky: { 'sky-color': '#2b3370', 'horizon-color': '#ff8a4c', 'fog-color': '#f0976a' },
-    light: { anchor: 'map', color: '#ffb07a', intensity: 0.5, position: [1.4, 265, 72] },
+    light: { anchor: 'map', color: '#ffcfa6', intensity: 0.5, position: [1.4, 265, 72] },
   },
   night: {
     label: '夜景', sat: [0.2, -0.5], water: 0.6, roads: 1, roof: ['#1a1b20', '#16181e'],
@@ -57,7 +57,7 @@ export const style = {
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
         'line-color': '#ff9f3d', 'line-blur': 4, 'line-opacity': 0,
-        'line-width': ['interpolate', ['exponential', 1.7], ['zoom'], 10, 1.5, 15, 9, 19, 60],
+        'line-width': ['interpolate', ['exponential', 1.7], ['zoom'], 10, 1.5, 15, 9, 19, 28],
       },
     },
     {
@@ -89,6 +89,9 @@ export const style = {
         'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 12.5, 0, 13.5, ['max', ['get', 'render_min_height'], ['-', ['get', 'render_height'], 0.6]]],
       },
     },
+    // Invisible. Past the tiles' maxzoom MapLibre re-slices them and keeps only source layers some style layer uses;
+    // without this the `poi` layer is dropped and the tile-POI shop fallback in main.js finds nothing when zoomed in.
+    { id: 'poi', type: 'circle', source: 'ofm', 'source-layer': 'poi', minzoom: 14, paint: { 'circle-radius': 1, 'circle-opacity': 0 } },
     {
       id: 'shops-dot', type: 'circle', source: 'shops',
       paint: { 'circle-radius': 5, 'circle-color': '#f2c36b', 'circle-stroke-color': '#1a1206', 'circle-stroke-width': 1.5, 'circle-pitch-alignment': 'map' },
@@ -129,7 +132,7 @@ function facade(mode, tall) {
   const g = c.getContext('2d');
   let s = tall ? 7 : 3; // seeded, so the city looks the same on every visit
   const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-  g.fillStyle = { day: tall ? '#b7c0c7' : '#d9d0c1', dusk: tall ? '#7d7076' : '#9e8878', night: tall ? '#0f1116' : '#17181c' }[mode];
+  g.fillStyle = { day: tall ? '#b7c0c7' : '#d9d0c1', dusk: tall ? '#6f7482' : '#a59a94', night: tall ? '#0f1116' : '#17181c' }[mode];
   g.fillRect(0, 0, S, S);
   const light = hue => `hsla(${hue}, 90%, ${68 + rnd() * 16}%, ${0.6 + rnd() * 0.35})`;
   for (let y = 0; y < S; y += fh) {
@@ -139,7 +142,7 @@ function facade(mode, tall) {
     if (tall) {
       const k = 148 + rnd() * 45; // reflections change floor by floor
       g.fillStyle = mode === 'day' ? `rgb(${k * 0.72},${k * 0.86},${k * 1.04})`
-        : mode === 'dusk' ? `rgb(${150 + rnd() * 35},${100 + rnd() * 25},${92 + rnd() * 20})` : '#1b1e26';
+        : mode === 'dusk' ? `rgb(${112 + rnd() * 30},${128 + rnd() * 22},${160 + rnd() * 25})` : '#1b1e26';
       g.fillRect(0, y + 3, S, fh - 5);
       for (let x = 0; x < S; x += 6) {
         switchRun();

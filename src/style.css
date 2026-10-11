@@ -84,7 +84,7 @@ body.cinema .fx { opacity: 1; }
 body[data-film=gold] { --tint: radial-gradient(circle at 82% 18%, rgba(255, 196, 110, .22), transparent 50%); }
 
 body[data-film=ink] { --tint: radial-gradient(ellipse at center, transparent 58%, rgba(241, 236, 226, .35) 100%); }
-body[data-film=ink] .title-card h1 { writing-mode: vertical-rl; padding: .25em 0 0; font-size: clamp(72px, 11vw, 140px); }
+body[data-film=ink] .title-card h1 { writing-mode: vertical-rl; justify-self: center; padding: .25em 0 0; font-size: clamp(72px, 11vw, 140px); }
 body[data-film=ink] .title-card .seal, body[data-film=sakura] .title-card .seal {
   display: grid; place-items: center; position: absolute; left: calc(50% + 11vw); top: 56%; width: 58px; height: 58px; padding: 4px;
   border-radius: 6px; background: var(--accent); color: #fff; font: 700 20px/1 var(--serif); font-style: normal; writing-mode: vertical-rl;
@@ -125,7 +125,8 @@ body[data-film=rose] { --tint: linear-gradient(160deg, rgba(255, 170, 110, .28),
 body[data-film=rose] .title-card h1, body[data-film=rose] .caption h2, body[data-film=rose] .title-card p { font-style: italic; }
 
 /* ---------- markers ---------- */
-.poi { width: 0; height: 0; }
+.poi { width: 0; height: 0; transition: opacity .8s; }
+body:has(.title-card.in) .poi { opacity: 0 !important; } /* keep the pins off the opening title; MapLibre sets opacity inline */
 .poi .pin { position: absolute; left: -15px; top: -46px; width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid #fff; background: var(--pink);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45); display: grid; place-items: center; font: 700 13px var(--sans); color: #fff; transition: transform .25s, background .25s; }
 .poi .pin::after { content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: 12px; margin-left: -1px; background: #fff; }
@@ -271,4 +272,5 @@ body.cinema .maplibregl-ctrl-bottom-right, body.picking .maplibregl-ctrl-bottom-
   .poi .name { display: none; }
   .maplibregl-ctrl-bottom-right { bottom: 64px; }
   body.drawer-open .poi .hint { display: none; }
+  .poi .hint { left: -98px; top: auto; bottom: 54px; } /* centred above the pin: beside it runs off a phone screen */
 }

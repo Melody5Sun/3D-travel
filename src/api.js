@@ -48,24 +48,23 @@ export const distance = ([a, b], [c, d]) =>
 
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 
+async function overpass(url, query) {
+  const r = await fetch(url, { method: 'POST', body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(8000) });
+  if (!r.ok) throw new Error(`overpass ${r.status}`);
+  return (await r.json()).elements; // a busy server may answer 200 with an HTML error page: json() throws
+}
+
 export async function nearbyShops(ll, radius = 600) {
   const [lng, lat] = ll, around = `(around:${radius},${lat},${lng})`;
   const query = `[out:json][timeout:15];(nwr${around}["name"]["shop"];` +
     `nwr${around}["name"]["amenity"~"^(restaurant|cafe|fast_food|bar|pub|ice_cream|food_court)$"];);out center 150;`;
-  let lastError;
-  for (const url of OVERPASS) {
-    try {
-      const r = await fetch(url, { method: 'POST', body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(9000) });
-      if (!r.ok) throw new Error(`overpass ${r.status}`);
-      const items = (await r.json()).elements.map(e => {
-        const t = e.tags, kind = t.amenity ?? t.shop;
-        const [label, icon] = SHOP_KINDS[kind] ?? SHOP_KINDS.shop;
-        const at = [e.lon ?? e.center.lon, e.lat ?? e.center.lat];
-        const extra = [t.cuisine && `菜系：${t.cuisine.replaceAll(';', ' / ')}`, t.opening_hours && `营业：${t.opening_hours}`].filter(Boolean).join(' · ');
-        return { name: t['name:zh'] ?? t.name, en: t['name:en'], label, icon, ll: at, dist: distance(ll, at), extra, web: t.website ?? t['contact:website'] };
-      });
-      return items.sort((a, b) => a.dist - b.dist);
-    } catch (e) { lastError = e; }
-  }
-  throw lastError;
+  // Ask both mirrors at once and take whichever answers first, so a dead or slow one costs no time.
+  const elements = await Promise.any(OVERPASS.map(url => overpass(url, query)));
+  return elements.flatMap(e => {
+    const t = e.tags ?? {}, kind = t.amenity ?? t.shop, at = [e.lon ?? e.center?.lon, e.lat ?? e.center?.lat];
+    if (!t.name || at[0] == null) return [];
+    const [label, icon] = SHOP_KINDS[kind] ?? SHOP_KINDS.shop;
+    const extra = [t.cuisine && `菜系：${t.cuisine.replaceAll(';', ' / ')}`, t.opening_hours && `营业：${t.opening_hours}`].filter(Boolean).join(' · ');
+    return [{ name: t['name:zh'] ?? t.name, en: t['name:en'], label, icon, ll: at, dist: distance(ll, at), extra, web: t.website ?? t['contact:website'] }];
+  }).sort((a, b) => a.dist - b.dist);
 }

@@ -1,6 +1,7 @@
 // Coordinates are WGS84 from OpenStreetMap, matching the map tiles.
 // Chinese map apps use the offset GCJ-02 system (~500 m off); never copy coordinates from them.
 // ll: [lng, lat]; h: height of the subject in metres, used to frame the camera.
+// span: rough extent in metres, for subjects that are an area (lake, harbour, park) rather than a building.
 
 const POLYHAVEN = 'https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/';
 
@@ -33,7 +34,7 @@ export const CITIES = [
         tips: ['交通：地铁2/10号线南京东路站', '看点：第一食品商店、沈大成等老字号', '夜晚灯光最美'] },
       { id: 'museum', name: '人民广场 · 上海博物馆', en: "People's Square", ll: [121.47103, 31.23019], h: 30, wiki: '上海博物馆',
         desc: '人民广场是上海的行政与文化中心。上海博物馆以“天圆地方”的造型著称，馆藏青铜器、陶瓷、书画等文物逾百万件。',
-        tips: ['交通：地铁1/2/8号线人民广场站', '博物馆需提前预约，周一闭馆', '周边：上海大剧院、城市规划展示馆'] },
+        tips: ['交通：地铁1/2/8号线人民广场站', '博物馆周一闭馆，入馆方式以官方公告为准', '周边：上海大剧院、城市规划展示馆'] },
       { id: 'xintiandi', name: '新天地', en: 'Xintiandi', ll: [121.4705, 31.22194], h: 20, wiki: '新天地',
         desc: '由石库门里弄改造的时尚街区，保留青砖步道与老式门楣，餐厅、酒吧与买手店云集；中共一大纪念馆就在街区旁。',
         tips: ['交通：地铁10/13号线新天地站', '适合傍晚到深夜漫步', '建议游览：2 小时'] },
@@ -48,8 +49,9 @@ export const CITIES = [
     // orbit: [lng, lat, targetAlt, radius, cameraAlt, fromBearing, toBearing] (bearing from target to camera).
     tour: [
       { title: '外滩', sub: 'THE BUND · 万国建筑博览群', spot: 'bund', dur: 11, mode: 'day',
-        // From over the Huangpu / Pudong bank looking west at the Bund facades, so no building stands between camera and subject.
-        cam: [[121.5005, 31.2285, 260], [121.4975, 31.2430, 220]], look: [[121.4885, 31.2340, 45], [121.4868, 31.2400, 50]] },
+        // Tracks north along the middle of the Huangpu looking west at the Bund facades. The whole path stays over water
+        // (river spans lng 121.4920–121.4985 at lat 31.232 and 121.4865–121.4905 at 31.240), clear of the Lujiazui towers.
+        cam: [[121.4955, 31.2315, 170], [121.4885, 31.2420, 200]], look: [[121.4850, 31.2345, 30], [121.4850, 31.2415, 30]] },
       { title: '东方明珠', sub: 'ORIENTAL PEARL TOWER · 468 m', spot: 'pearl', dur: 10, mode: 'day',
         orbit: [121.49527, 31.2419, 220, 560, 300, 245, 325] },
       { title: '陆家嘴', sub: 'LUJIAZUI · 金融城天际线', spot: 'jinmao', dur: 10, mode: 'dusk',
@@ -68,10 +70,10 @@ export const CITIES = [
     id: 'beijing', name: '北京', en: 'Beijing', tagline: '千年古都 · 中轴之城', color: '#d4412f', film: 'ink',
     view: { center: [116.3935, 39.9085], zoom: 14, pitch: 60, bearing: 0 },
     spots: [
-      { id: 'gugong', name: '故宫', en: 'Forbidden City', ll: [116.39077, 39.91728], h: 35, wiki: '故宫',
+      { id: 'gugong', name: '故宫', en: 'Forbidden City', ll: [116.39077, 39.91728], h: 35, span: 1000, wiki: '故宫',
         desc: '明清两代的皇家宫殿，始建于明永乐四年（1406年），占地72万平方米，是世界上现存规模最大、保存最完整的木结构古建筑群之一，1987年列入世界文化遗产。',
         tips: ['需提前实名预约，周一闭馆（法定节假日除外）', '交通：地铁1号线天安门东站', '建议游览：半天'] },
-      { id: 'tiananmen', name: '天安门广场', en: 'Tiananmen Square', ll: [116.39144, 39.90272], h: 40, wiki: '天安门广场',
+      { id: 'tiananmen', name: '天安门广场', en: 'Tiananmen Square', ll: [116.39144, 39.90272], h: 40, span: 800, wiki: '天安门广场',
         desc: '位于北京中轴线上的城市广场，北起天安门、南至正阳门，周边有人民英雄纪念碑、人民大会堂与中国国家博物馆。',
         tips: ['清晨举行升旗仪式，时间随日出变化', '进入广场需安检并携带身份证件', '交通：地铁1号线天安门东/西站'],
         pano: { url: POLYHAVEN + 'zhengyang_gate.jpg', yaw: 0.81, credit: 'Greg Zaal / Poly Haven · CC0' } },
@@ -87,13 +89,17 @@ export const CITIES = [
       { id: 'niaochao', name: '鸟巢', en: 'National Stadium', ll: [116.39029, 39.9914], h: 69, wiki: '国家体育场 (北京)',
         desc: '2008年北京奥运会主体育场，钢结构如鸟巢般交织，是全球首个同时举办过夏季与冬季奥运会开幕式的体育场。',
         tips: ['交通：地铁8号线奥林匹克公园站', '夜晚与水立方同时亮灯'] },
+      { id: 'summerpalace', name: '颐和园 · 谐趣园', en: 'Summer Palace', ll: [116.276, 39.9991], h: 20, wiki: '颐和园',
+        desc: '前身为清漪园，始建于1750年的皇家园林，以昆明湖、万寿山为主体，1998年列入世界文化遗产。谐趣园是园中之园，仿无锡寄畅园而建，池畔亭榭由回廊相连。',
+        tips: ['交通：地铁4号线北宫门站', '谐趣园在园区东北角、万寿山东麓', '建议游览：半天'],
+        pano: { url: POLYHAVEN + 'xiequ_yuan.jpg', yaw: 0.47, credit: 'Greg Zaal / Poly Haven · CC0' } },
     ],
   },
   {
     id: 'hangzhou', name: '杭州', en: 'Hangzhou', tagline: '上有天堂 · 下有苏杭', color: '#3aa37a', film: 'jade', terrain: true,
     view: { center: [120.1480, 30.2480], zoom: 13.6, pitch: 58, bearing: 250 },
     spots: [
-      { id: 'xihu', name: '西湖', en: 'West Lake', ll: [120.14313, 30.24598], h: 10, wiki: '西湖',
+      { id: 'xihu', name: '西湖', en: 'West Lake', ll: [120.14313, 30.24598], h: 10, span: 3000, wiki: '西湖',
         desc: '“欲把西湖比西子，淡妆浓抹总相宜。”三面环山、一面临城，2011年以“杭州西湖文化景观”列入世界文化遗产。',
         tips: ['环湖骑行或乘手划船游湖', '交通：地铁1号线龙翔桥站', '建议游览：1 天'] },
       { id: 'duanqiao', name: '断桥残雪', en: 'Broken Bridge', ll: [120.14703, 30.2609], h: 10, wiki: '断桥',
@@ -120,7 +126,7 @@ export const CITIES = [
       { id: 'cantontower', name: '广州塔', en: 'Canton Tower', ll: [113.31915, 23.10901], h: 600, wiki: '广州塔',
         desc: '昵称“小蛮腰”，塔身主体高454米，天线桅杆高146米，总高600米。450米高空的摩天轮与“极速云霄”速降项目令人心跳加速。',
         tips: ['交通：地铁3号线/APM线广州塔站', '傍晚登塔可同时看日落与夜景'] },
-      { id: 'huacheng', name: '花城广场', en: 'Huacheng Square', ll: [113.31898, 23.12253], h: 20, wiki: '花城广场',
+      { id: 'huacheng', name: '花城广场', en: 'Huacheng Square', ll: [113.31898, 23.12253], h: 20, span: 900, wiki: '花城广场',
         desc: '珠江新城的城市中轴广场，被广州塔、广州国际金融中心、周大福金融中心与广州大剧院环绕，是欣赏广州夜景的核心区域。',
         tips: ['交通：APM线花城大道站', '夜晚灯光最美'] },
       { id: 'ctf', name: '周大福金融中心', en: 'CTF Finance Centre', ll: [113.32088, 23.12055], h: 530, wiki: '广州周大福金融中心',
@@ -129,7 +135,7 @@ export const CITIES = [
       { id: 'ifc', name: '广州国际金融中心', en: 'Guangzhou IFC', ll: [113.31786, 23.12025], h: 440, wiki: '广州国际金融中心',
         desc: '高440米的“西塔”，与东塔隔花城广场相望，顶部酒店拥有贯通多层的中空中庭。',
         tips: ['交通：地铁3/5号线珠江新城站'] },
-      { id: 'shamian', name: '沙面', en: 'Shamian Island', ll: [113.23931, 23.10945], h: 20, wiki: '沙面',
+      { id: 'shamian', name: '沙面', en: 'Shamian Island', ll: [113.23931, 23.10945], h: 20, span: 800, wiki: '沙面',
         desc: '珠江边的小岛，19世纪曾为英法租界，保存有大量欧陆风格建筑，绿树成荫，是广州最具异国风情的历史街区。',
         tips: ['交通：地铁1/6号线黄沙站', '适合拍照漫步'] },
       { id: 'chenjiaci', name: '陈家祠', en: 'Chen Clan Ancestral Hall', ll: [113.24013, 23.12983], h: 20, wiki: '陈家祠',
@@ -141,7 +147,7 @@ export const CITIES = [
     id: 'hongkong', name: '香港', en: 'Hong Kong', tagline: '东方之珠 · 维港夜色', color: '#2f8fd8', film: 'neon', terrain: true,
     view: { center: [114.1640, 22.2905], zoom: 13.8, pitch: 65, bearing: 165 },
     spots: [
-      { id: 'harbour', name: '维多利亚港', en: 'Victoria Harbour', ll: [114.172, 22.2935], h: 10, wiki: '维多利亚港',
+      { id: 'harbour', name: '维多利亚港', en: 'Victoria Harbour', ll: [114.172, 22.2935], h: 10, span: 2200, wiki: '维多利亚港',
         desc: '世界三大天然良港之一，两岸摩天楼林立。每晚8点上演的“幻彩咏香江”灯光音乐汇演是维港的夜间名片。',
         tips: ['乘天星小轮往返尖沙咀与中环', '20:00 观看幻彩咏香江'] },
       { id: 'peak', name: '太平山顶', en: 'Victoria Peak', ll: [114.14999, 22.27126], h: 40, wiki: '太平山 (香港)',
@@ -174,7 +180,7 @@ export const CITIES = [
       { id: 'raffles', name: '重庆来福士', en: 'Raffles City Chongqing', ll: [106.58313, 29.56756], h: 350, wiki: '重庆来福士广场',
         desc: '位于长江与嘉陵江交汇的朝天门，八座塔楼顶部由约300米长的“水晶连廊”横向相连，犹如扬帆起航的巨轮。',
         tips: ['交通：地铁1号线小什字站', '朝天门广场看两江交汇'] },
-      { id: 'cableway', name: '长江索道', en: 'Yangtze River Cableway', ll: [106.58444, 29.55804], h: 60, wiki: '长江索道',
+      { id: 'cableway', name: '长江索道', en: 'Yangtze River Cableway', ll: [106.58444, 29.55804], h: 60, span: 1300, wiki: '长江索道',
         desc: '1987年建成的跨江索道，全长1166米，被誉为“万里长江第一条空中走廊”，可俯瞰两岸山城风光。',
         tips: ['排队时间较长，建议错峰', '夜晚乘坐看江景'] },
       { id: 'liziba', name: '李子坝轻轨穿楼', en: 'Liziba Station', ll: [106.53392, 29.55566], h: 30, wiki: '李子坝站',
@@ -201,7 +207,7 @@ export const CITIES = [
       { id: 'tocho', name: '东京都厅', en: 'Tokyo Metropolitan Government Building', ll: [139.69171, 35.6895], h: 243, wiki: '东京都厅舍',
         desc: '丹下健三设计的双塔政府大楼，202米高的免费展望室可眺望新宿天际线。',
         tips: ['展望室免费开放', '交通：都营大江户线都厅前站'] },
-      { id: 'kokyo', name: '皇居', en: 'Imperial Palace', ll: [139.7528, 35.6852], h: 20, wiki: '皇居',
+      { id: 'kokyo', name: '皇居', en: 'Imperial Palace', ll: [139.7528, 35.6852], h: 20, span: 1600, wiki: '皇居',
         desc: '江户城旧址，现为日本天皇居所；二重桥与护城河畔的樱花、红叶是东京最经典的四季风景。',
         tips: ['东御苑免费开放（周一、周五休园）'] },
     ],
@@ -222,10 +228,10 @@ export const CITIES = [
       { id: 'liberty', name: '自由女神像', en: 'Statue of Liberty', ll: [-74.04455, 40.68925], h: 93, wiki: '自由女神像',
         desc: '1886年法国赠送的美国独立百年礼物，连基座高93米，1984年列入世界文化遗产。',
         tips: ['从炮台公园乘渡轮前往', '免费的史泰登岛渡轮可远观'] },
-      { id: 'centralpark', name: '中央公园', en: 'Central Park', ll: [-73.97105, 40.77422], h: 20, wiki: '中央公园',
+      { id: 'centralpark', name: '中央公园', en: 'Central Park', ll: [-73.97105, 40.77422], h: 20, span: 2600, wiki: '中央公园',
         desc: '面积约341公顷的城市绿洲，被摩天楼环抱；毕士达露台与喷泉是公园最具代表性的景点。',
         tips: ['秋季红叶最美', '可租自行车环游'] },
-      { id: 'brooklyn', name: '布鲁克林大桥', en: 'Brooklyn Bridge', ll: [-73.99702, 40.70622], h: 84, wiki: '布鲁克林大桥',
+      { id: 'brooklyn', name: '布鲁克林大桥', en: 'Brooklyn Bridge', ll: [-73.99702, 40.70622], h: 84, span: 1100, wiki: '布鲁克林大桥',
         desc: '1883年通车的哥特式悬索桥，步行过桥可饱览曼哈顿下城天际线。',
         tips: ['日出或日落时步行过桥'] },
     ],
@@ -237,7 +243,7 @@ export const CITIES = [
       { id: 'eiffel', name: '埃菲尔铁塔', en: 'Eiffel Tower', ll: [2.2945, 48.85826], h: 330, wiki: '埃菲尔铁塔',
         desc: '为1889年世界博览会建造的铁塔，高约330米，入夜后每逢整点闪烁5分钟。',
         tips: ['在特罗卡德罗广场拍全景', '提前网上购票'] },
-      { id: 'louvre', name: '卢浮宫', en: 'Louvre', ll: [2.33584, 48.86099], h: 21, wiki: '卢浮宫',
+      { id: 'louvre', name: '卢浮宫', en: 'Louvre', ll: [2.33584, 48.86099], h: 21, span: 700, wiki: '卢浮宫',
         desc: '世界上参观人数最多的博物馆之一，贝聿铭设计的玻璃金字塔入口与《蒙娜丽莎》等馆藏闻名于世。',
         tips: ['周二闭馆', '需提前预约时段'] },
       { id: 'arc', name: '凯旋门', en: 'Arc de Triomphe', ll: [2.29504, 48.87378], h: 50, wiki: '巴黎凯旋门',
@@ -248,7 +254,8 @@ export const CITIES = [
         tips: ['免费参观，可在线预约'] },
       { id: 'sacrecoeur', name: '圣心大教堂', en: 'Sacré-Cœur', ll: [2.34302, 48.88681], h: 83, wiki: '圣心堂',
         desc: '位于蒙马特高地的白色罗马-拜占庭式大教堂，是巴黎的至高点之一，可俯瞰全城。',
-        tips: ['傍晚在台阶上看日落'] },
+        tips: ['傍晚在台阶上看日落'],
+        pano: { url: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Vue_360_-_Parvis_de_la_basilique_du_Sacr%C3%A9-C%C5%93ur_de_Montmartre.jpg', yaw: 0.97, credit: 'Bastenbas / Wikimedia Commons · CC BY-SA 4.0' } },
     ],
   },
 ];
